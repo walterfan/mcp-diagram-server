@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Diagram Renderer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Tahoma', Arial, sans-serif;
+            background: #ece9d8;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #ece9d8;
+            border: 2px solid #818181;
+            border-radius: 0;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(to bottom, #4a8fd6 0%, #1e73c6 50%, #0e5ba3 50%, #004d99 100%);
+            border: 2px solid #2563a0;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.3);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 8px;
+            border: 2px inset #ffffff;
+            border-radius: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+            background: white;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #4a8fd6;
+        }
+        
+        select {
+            width: 100%;
+            padding: 6px;
+            border: 2px outset #ffffff;
+            border-radius: 0;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+        }
+        
+        select:focus {
+            outline: none;
+            border: 2px inset #4a8fd6;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(to bottom, #e3e3e3 0%, #d3d3d3 100%);
+            color: black;
+            border: 2px outset #ffffff;
+            border-radius: 0;
+            font-size: 1.1em;
+            font-weight: normal;
+            cursor: pointer;
+            text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
+        }
+        
+        button:hover {
+            background: linear-gradient(to bottom, #f0f0f0 0%, #e0e0e0 100%);
+        }
+        
+        button:active {
+            border: 2px inset #cccccc;
+            background: linear-gradient(to bottom, #d0d0d0 0%, #c0c0c0 100%);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        #loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+            color: #0066cc;
+        }
+        
+        .output-container {
+            margin-top: 30px;
+            min-height: 200px;
+            border: 2px inset #ffffff;
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+        }
+        
+        .output-container img {
+            max-width: 100%;
+            max-height: 600px;
+            border: 2px outset #ffffff;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .error {
+            color: #cc0000;
+            background: #ffe8e8;
+            padding: 15px;
+            border: 2px inset #ffcccc;
+            border-radius: 0;
+        }
+        
+        .success {
+            color: #006600;
+            background: #e8ffe8;
+            padding: 15px;
+            border: 2px inset #ccffcc;
+            border-radius: 0;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow: auto;
+        }
+        
+        .modal-content {
+            background-color: #ece9d8;
+            margin: 10% auto;
+            border: 2px solid #818181;
+            width: 80%;
+            max-width: 800px;
+            max-height: 70vh;
+            overflow: auto;
+        }
+        
+        .modal-header {
+            background: linear-gradient(to bottom, #4a8fd6 0%, #1e73c6 50%, #0e5ba3 50%, #004d99 100%);
+            border-bottom: 2px solid #2563a0;
+            padding: 15px 20px;
+            color: white;
+            position: relative;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.3em;
+        }
+        
+        .modal-close {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 2em;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px outset white;
+            padding: 2px 8px;
+            line-height: 1;
+        }
+        
+        .modal-close:hover {
+            border: 2px inset white;
+        }
+        
+        .modal-body {
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .tool-item {
+            background: white;
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 2px inset #ffffff;
+        }
+        
+        .tool-name {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #0066cc;
+            margin-bottom: 8px;
+        }
+        
+        .tool-description {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .tool-arguments {
+            background: #f9f9f9;
+            padding: 10px;
+            border: 1px solid #ddd;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 MCP Diagram Renderer</h1>
+            <p><a href="#" onclick="listTools()">Tools: PlantUML, Graphviz, and Mermaid diagrams rendering</a></p>
+        </div>
+
+        <div class="content">
+            <form id="diagramForm">
+            <div class="form-group">
+                <label for="diagramScript">Diagram Script:</label>
+                <textarea id="diagramScript" name="script" placeholder="Enter your diagram code here..."></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="diagramType">Diagram Type:</label>
+                    <select id="diagramType" name="type">
+                        <option value="plantuml">PlantUML</option>
+                        <option value="graphviz">Graphviz (DOT)</option>
+                        <option value="mermaid">Mermaid</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="outputFormat">Output Format:</label>
+                    <select id="outputFormat" name="format">
+                        <option value="svg">SVG (recommended)</option>
+                        <option value="png">PNG</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="quickExamples">Quick Examples:</label>
+                    <select id="quickExamples" name="examples">
+                        <option value="">Select an example...</option>
+                        <option value="plantuml">PlantUML Sequence</option>
+                        <option value="graphviz">Graphviz Architecture</option>
+                        <option value="mermaid">Mermaid Flowchart</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button type="submit" id="submitBtn">Render Diagram</button>
+            </form>
+            
+            <div id="loading">
+                <p>⏳ Rendering diagram...</p>
+            </div>
+            
+            <div id="output" class="output-container">
+                <p style="color: #999;">Rendered diagram will appear here</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for displaying API response -->
+    <div id="apiModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Available Tools</h2>
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <p>Loading...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const examples = {
+            plantuml: '@startuml\nAlice -> Bob: Hello\nBob --> Alice: Hi\n@enduml',
+            graphviz: 'digraph G {\n  A -> B\n  B -> C\n  C -> A\n}',
+            mermaid: 'graph TD\n  A[Start] --> B{Decision}\n  B -->|Yes| C[Action 1]\n  B -->|No| D[Action 2]'
+        };
+        
+        // Handle quick examples dropdown
+        document.getElementById('quickExamples').addEventListener('change', function(e) {
+            const type = e.target.value;
+            if (type && examples[type]) {
+                document.getElementById('diagramScript').value = examples[type];
+                document.getElementById('diagramType').value = type;
+                e.target.value = ''; // Reset dropdown
+            }
+        });
+        
+        document.getElementById('diagramForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const script = document.getElementById('diagramScript').value;
+            const type = document.getElementById('diagramType').value;
+            const format = document.getElementById('outputFormat').value;
+            
+            const output = document.getElementById('output');
+            const loading = document.getElementById('loading');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (!script.trim()) {
+                output.innerHTML = '<div class="error">⚠️ Please enter a diagram script</div>';
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            output.innerHTML = '';
+            
+            try {
+                const toolName = {
+                    'plantuml': 'plantuml.render',
+                    'graphviz': 'graphviz.render',
+                    'mermaid': 'mermaid.render'
+                }[type];
+                
+
+                const args = {
+                    text: script,
+                    format: format
+                };
+                
+                const response = await fetch('/call_tool', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: toolName,
+                        arguments: args
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    const imgData = data.result.data_base64;
+                    const contentType = data.result.content_type;
+
+                    output.innerHTML = `<img src="data:${contentType};base64,${imgData}" alt="Rendered diagram">`;
+                } else {
+                    output.innerHTML = `<div class="error">❌ Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Network error: ${error.message}</div>`;
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+
+        function openModal() {
+            document.getElementById('apiModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('apiModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('apiModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+        
+        function listTools() {
+            openModal();
+            
+            fetch('/list_tools', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok && data.tools) {
+                        displayTools(data.tools);
+                    } else {
+                        document.getElementById('modalBody').innerHTML = 
+                            '<div class="error">Error loading tools</div>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('modalBody').innerHTML = 
+                        '<div class="error">Error: ' + error.message + '</div>';
+                });
+        }
+        
+        function displayTools(tools) {
+            const modalBody = document.getElementById('modalBody');
+            let html = '<p><strong>Total: ' + tools.length + ' tools available</strong></p>';
+            
+            tools.forEach(tool => {
+                html += '<div class="tool-item">';
+                html += '<div class="tool-name">' + tool.name + '</div>';
+                html += '<div class="tool-description">' + tool.description + '</div>';
+                html += '<div class="tool-arguments">';
+                html += '<strong>Arguments:</strong><br>';
+                
+                if (tool.arguments) {
+                    Object.entries(tool.arguments).forEach(([key, value]) => {
+                        html += '&nbsp;&nbsp;• <strong>' + key + ':</strong> ' + value + '<br>';
+                    });
+                }
+                
+                html += '</div>';
+                html += '</div>';
+            });
+
+            modalBody.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
+

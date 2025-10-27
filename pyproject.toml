@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "mcp-diagram-server"
+version = "0.1.0"
+description = "MCP-like HTTP server for rendering diagrams (PlantUML, Graphviz, Mermaid)"
+authors = ["Walter Fan <walter.fan@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fastapi = "^0.104.0"
+uvicorn = "^0.24.0"
+graphviz = "^0.20.1"
+requests = "^2.31.0"
+python-dotenv = "^1.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+httpx = "^0.25.0"
+black = "^23.0.0"
+ruff = "^0.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
